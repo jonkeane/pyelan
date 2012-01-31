@@ -1,4 +1,5 @@
 import sys, os
+import tkMessageBox
 from elementtree import ElementTree
 
 
@@ -53,9 +54,10 @@ class tierSet:
             sameDirPath = os.path.join(pathELAN,os.path.basename(media))
             if os.path.isfile(sameDirPath) == False:
                 #error if there are no tiers selected.
-                tkMessageBox.showwarning(
-                    "No media found",
-                    "Could not find the media attached to the ELAN file. Please open the ELAN file, find the media, and then save it again.")
+                ## commented to prevent tk from launching, but should be changed, how to check if tk is running?
+                ## tkMessageBox.showwarning(
+                ##     "No media found",
+                ##     "Could not find the media attached to the ELAN file. Please open the ELAN file, find the media, and then save it again.")
                 self.media = []
                 self.tiers = tier
                 self.pathELAN = []
@@ -80,10 +82,10 @@ class tierSet:
                 time1 = timeDict[xx[0].attrib['TIME_SLOT_REF1']]
                 time2 = timeDict[xx[0].attrib['TIME_SLOT_REF2']]
                 value = xx[0][0].text
-                annos.append(annotation(time1, time2, value))
+                annos.append(annotation(int(time1), int(time2), value))
             clipTiers.append(tier(tierFound.attrib['TIER_ID'],annos))
         if clipTiers == []:
-            print "No tier named 'Clips', please supply an eaf with one to segment on."
+            print("No tier named 'Clips', please supply an eaf with one to segment on.")
             exit
         # Find the media file
         # check? <HEADER MEDIA_FILE="" TIME_UNITS="milliseconds">
@@ -103,5 +105,24 @@ class tierSet:
         for tr in tiers:
             if tr.tierName in tierNames:
                 newTiers.append(tr)
+        tiers = newTiers    
+        return tierSet(file=None, media=media, tiers=tiers, pathELAN=pathELAN)
+    
+    def miniTier(tierObj, begin, end):
+        """An unbound function that extracts a subset of a tier"""
+        media = tierObj.media
+        tiers = tierObj.tiers
+        pathELAN = tierObj.pathELAN
+        newTiers = []        
+        for tr in tiers:
+            newAnnotations = []
+            newTierName = tr.tierName
+            for anno in tr.annotations:
+                if anno.begin >= begin and anno.end <= end:
+                    print("I added "+anno.value+": "+str(anno.begin)+"-"+str(anno.end))
+                    newAnnotations.append(anno)
+                ## else:
+                ##     print("Skipping, out of bounds.")
+            newTiers.append(tier(tierName=newTierName, annotations= newAnnotations))
         tiers = newTiers    
         return tierSet(file=None, media=media, tiers=tiers, pathELAN=pathELAN)
