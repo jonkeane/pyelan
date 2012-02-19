@@ -3,11 +3,20 @@ import tkMessageBox
 from elementtree import ElementTree
 
 
-#-------------------------------------------------------------------------------
-# Extract annotations from all tiers .eaf file (which is an XML file)
-# creates a dictionary where each key is a tier name mapped to a list of tuples
-# that include each annotation
-#-------------------------------------------------------------------------------
+class Error(Exception):
+    """Base class for exceptions in this module."""
+    pass
+
+class noMediaError(Error):
+    """Exception raised for errors dealing with the media file.
+
+    Attributes:
+        filename -- the filename that is a problem
+    """
+
+    def __init__(self, filename):
+        self.filename = filename
+        
 
 class annotation:
     """A single annotation that has a beginning, an ending, an annotation value, and a unit type (default is milliseconds"""
@@ -54,14 +63,10 @@ class tierSet:
         if os.path.isfile(media) == False:
             sameDirPath = os.path.join(pathELAN,os.path.basename(media))
             if os.path.isfile(sameDirPath) == False:
-                #error if there are no tiers selected.
-                ## commented to prevent tk from launching, but should be changed, how to check if tk is running?
-                ## tkMessageBox.showwarning(
-                ##     "No media found",
-                ##     "Could not find the media attached to the ELAN file. Please open the ELAN file, find the media, and then save it again.")
                 self.media = []
                 self.tiers = tier
                 self.pathELAN = []
+                raise noMediaError(media)
                 
             else:    
                 self.media = sameDirPath
@@ -135,7 +140,7 @@ class tierSet:
         tiers = newTiers    
         return tierSet(file=None, media=media, tiers=tiers, pathELAN=pathELAN)
 
-    def elanOut(tierObj, headFootFile = "elanSkeleton.eaf"):
+    def elanOut(tierObj, headFootFile = os.path.join(os.path.dirname(__file__),"elanSkeleton.eaf")):
         """An unbound function that returns an elan file from a tier."""
         verbose = False
         tree = ElementTree.parse(headFootFile)
