@@ -23,7 +23,7 @@ class annotation:
     def __init__(self, begin, end, value, units="ms"):
         self.begin = begin
         self.end = end
-        self.value = value
+        self.value = value.strip()
         self.units = units
  
     def millisToFrames(self, fps = (60.*(1000./1001.))):
