@@ -1,5 +1,5 @@
 import sys, re, os, csv, json
-import pyelan.pyelan as pyelan
+import pyelan as pyelan
 
 # python elanGen.py "./clippedData/GRI_006-SESSION_001-TRIAL_002.mov" "elanFiles" '[{"file" : "./savedData/GRI_006/GRI_006-SESSION_001-TRIAL_002.csv", "tracks" : [{"name": "clapper", "column": 36, "min":0, "max":200}, {"name": "grip", "column": 35, "min":0, "max":200}]}]'
 
