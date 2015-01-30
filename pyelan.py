@@ -1,4 +1,4 @@
-import sys, os, datetime
+import sys, os, re, datetime, warnings
 from elementtree import ElementTree
 
 #import tk if it exists. This import might not actually be necesary in pyelan anymore (it might be legacy from fflipper)
@@ -35,7 +35,51 @@ def indent(elem, level=0):
     else:
         if level and (not elem.tail or not elem.tail.strip()):
             elem.tail = i
+
+
+def getRecDirStruct(rootdir):
+    """
+    Creates a nested dictionary that represents the folder structure of rootdir
+    based loosely on code from http://code.activestate.com/recipes/577879-create-a-nested-dictionary-from-oswalk/
+    """
+    dir = []
+    rootdir = rootdir.rstrip(os.sep)
+    for path, dirs, files in os.walk(rootdir):
+        [dir.append(os.path.join(path,file)) for file in files]
+    return dir
+    
+def lcs(string1, string2):
+    # from http://stackoverflow.com/questions/5267610/comparing-strings
+    m = len(string1)
+    n = len(string2)
+
+    C = [[0] * (n + 1)] * (m + 1)
+    for i in range(m + 1)[1:]:
+        for j in range(n + 1)[1:]:
+            if string1[i - 1] == string2[j - 1]:
+                C[i][j] = C[i - 1][j - 1] + 1
+            else:
+                C[i][j] = max(C[i][j - 1], C[i - 1][j])
+    return C[m][n]    
+
+def findPathMatch(oldPath, searchDir = "./"):
+    dirContents = getRecDirStruct(searchDir)
+    if os.path.isfile(oldPath) == False:
+        # if the current path is not a valid path
+        basename = os.path.basename(oldPath)
         
+        # filter all of the files in the current directory that match the filename
+        newPaths = filter(lambda s: re.match(os.path.sep.join((".*",basename)), s), dirContents)
+        if len(newPaths) == 1:
+            # if only one is found, make that the new path
+            newPath = newPaths[0]
+        else:
+            # determine which path matches more of the directory structure. This uses common strings, but not common contiguous strings. This should work in nearly all conditions, but there migth be edge cases where this fails.
+            scores = [lcs(oldPath,pt) for pt in newPaths]
+            newPath = newPaths[scores.index(max(scores))]
+    else:
+        newPath = oldPath
+    return newPath        
 
 class annotation:
     """A single annotation that has a beginning, an ending, an annotation value, and a unit type (default is milliseconds"""
@@ -83,10 +127,10 @@ class tierSet:
         if os.path.isfile(media) == False:
             sameDirPath = os.path.join(pathELAN,os.path.basename(media))
             if os.path.isfile(sameDirPath) == False:
-                self.media = []
-                self.tiers = tier
-                self.pathELAN = []
-                raise noMediaError(media)
+                # self.media = []
+                # self.tiers = tier
+                # self.pathELAN = []
+                warnings.warn("Could not find the media file.")
                 
             else:    
                 self.media = sameDirPath
@@ -132,6 +176,13 @@ class tierSet:
         mediaPath = mediaPath[7:]
         return clipTiers,mediaPath,linkedFilePaths
 
+    def fixLinks(self, searchDir="./"):
+        """A function that fixes links in an elan file by searching recursively through the search directory, and then links the best matches for each file."""
+        self.media = os.path.abspath(findPathMatch(self.media, searchDir=searchDir))
+        self.linkedFiles = [os.path.abspath(findPathMatch(path, searchDir=searchDir)) for path in self.linkedFiles]
+        
+        
+    
     def selectedTiers(tierObj, tierNames):
         """An unbound function that extracts the tiers given in the list tierNames"""
         media = tierObj.media
@@ -282,8 +333,6 @@ def pfsxOut(tsConfigs):
         return tree        
         
         
-        
-        
 class track:
     """A track"""
     def __init__(self, name, column, row=0, range=[None, None], color=[0,0,0], properties=None, derivative=0):
@@ -294,15 +343,12 @@ class track:
         self.color = color
         self.properties = properties
         self.derivative = derivative
-        
-        
-        
+
 class timeSeries:
     """A time series either from a file, or from individual specification"""
     def __init__(self, file=None, source=None, sampleType="Continuos Rate", timeCol=0, tracks=None):
         if file:
-            # this needs to be updated
-            source, sampleType, tracks = self.extractTimeSeries(file)
+            source, sampleType, tracks, timeCol = self.extractTimeSeries(file)
             pathELAN = os.path.dirname(file)
         self.source = source
         self.sampleType = sampleType
@@ -315,45 +361,42 @@ class timeSeries:
         tree = ElementTree.parse(file)
         root = tree.getroot()
         rootLen = len(root)    
-        pairs = [(X.attrib['TIME_SLOT_ID'],X.attrib['TIME_VALUE']) for X in root[1]]
-        timeDict = dict(pairs)
-        if verbose: print(timeDict)
-        clipTiers = []
-        for tierFound in root.findall('TIER'):
-            if verbose: print( tierFound.attrib['TIER_ID'])
-            annos = []
-            for xx in tierFound:
-                time1 = timeDict[xx[0].attrib['TIME_SLOT_REF1']]
-                time2 = timeDict[xx[0].attrib['TIME_SLOT_REF2']]
-                value = xx[0][0].text
-                annos.append(annotation(int(time1), int(time2), value))
-            clipTiers.append(tier(tierFound.attrib['TIER_ID'],annos))
-        if clipTiers == []:
-            print("No tier named 'Clips', please supply an eaf with one to segment on.")
-            exit
-        # Find the media file
-        # check? <HEADER MEDIA_FILE="" TIME_UNITS="milliseconds">
-        header = root.findall('HEADER')
-        media = header[0].findall('MEDIA_DESCRIPTOR')
-        mediaPath = media[0].attrib['MEDIA_URL']
+        # get track source
+        tracksource = root.findall("tracksource")[0] # maybe check how many there are. There should only ever be one.
+        source = tracksource.attrib['source-url'][7:] # the [7:] removes the file://
+        sampleType = tracksource.attrib['sample-type']
+        timeCol = int(tracksource.attrib['time-column'])
         
-        # Find any linked files
-        linkedFiles = header[0].findall('LINKED_FILE_DESCRIPTOR')
-        if len(linkedFiles) > 0:
-            linkedFilePaths = []
-            for linkedFile in linkedFiles:
-                linkedFilePaths.append(linkedFile.attrib['LINK_URL'])
-        else:
-            linkedFilePaths = None
+        # get individual tracks
+        tracks = tracksource.findall("track")
+        trackList = []
+        for trk in tracks:
+            deriv = trk.attrib['derivative']
+            name = trk.attrib['name']
+            props = trk.findall("property")
+            properties = {}
+            for prop in props:
+                properties[prop.attrib['key']] = prop.attrib['value']
+            samplePos = trk.findall("sample-position")[0] # should be only one
+            pos = samplePos.findall('pos')[0] # should be only one
+            column = pos.attrib['col']
+            row = pos.attrib['row']
+            range = trk.findall("range")[0] # should be only one
+            max = range.attrib['max']
+            min = range.attrib['min']  
+            color = trk.findall("color")[0] # should be only one
+            color = [int(i) for i in color.text.split(',')]
+            range = [min,max]  
+            trackList.append(track(name, column, row, range, color, properties, deriv))
+        return source, sampleType, trackList, timeCol
         
-        # remove "file://" from the path
-        mediaPath = mediaPath[7:]
-        return clipTiers,mediaPath,linkedFilePaths 
+    def fixLinks(self, searchDir="./"):
+        """A function that fixes links in a tsconf file by searching recursively through the search directory, and then links the best matches for each file."""
+        self.source = os.path.abspath(findPathMatch(self.source, searchDir=searchDir))
         
     def timeSeriesOut(tsObj):
         """An unbound function that returns the time series configuration file for the ts object"""
         verbose = False
-
         
         # Set media for the elan file
         tree = ElementTree.ElementTree()
