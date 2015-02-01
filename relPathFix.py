@@ -1,5 +1,5 @@
 import sys, os, re
-import pyelan.pyelan as pyelan
+import pyelan as pyelan
 
 # python realPathFix.py [search path] [files]
 searchDir = sys.argv[1]

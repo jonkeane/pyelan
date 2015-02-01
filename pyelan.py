@@ -114,12 +114,13 @@ class tier:
 
 class tierSet:
     """A Tier set either from a file, or from media, tiers, and a pathELAN"""
-    def __init__(self, file=None, media=None, linkedFiles=[None], tiers=None, pathELAN=None):
+    def __init__(self, file=None, media=None, linkedFiles=[None], relLinkedFiles=[None], tiers=None, pathELAN=None):
         if file:
-            tiers,media,linkedFiles = self.extractTiers(file)
+            tiers,media,linkedFiles,relLinkedFiles = self.extractTiers(file)
             pathELAN = os.path.dirname(file)
         self.media = media
         self.linkedFiles = linkedFiles
+        self.relLinkedFiles = relLinkedFiles
         self.tiers = tiers
         self.pathELAN = pathELAN
 
@@ -146,13 +147,15 @@ class tierSet:
         if verbose: print(timeDict)
         clipTiers = []
         for tierFound in root.findall('TIER'):
-            if verbose: print( tierFound.attrib['TIER_ID'])
+            if verbose: print(tierFound.attrib['TIER_ID'])
             annos = []
             for xx in tierFound:
                 time1 = timeDict[xx[0].attrib['TIME_SLOT_REF1']]
                 time2 = timeDict[xx[0].attrib['TIME_SLOT_REF2']]
                 value = xx[0][0].text
+                if verbose: print(value)
                 annos.append(annotation(int(time1), int(time2), value))
+            if verbose: print(annos)
             clipTiers.append(tier(tierFound.attrib['TIER_ID'],annos))
         if clipTiers == []:
             print("No tier named 'Clips', please supply an eaf with one to segment on.")
@@ -167,14 +170,17 @@ class tierSet:
         linkedFiles = header[0].findall('LINKED_FILE_DESCRIPTOR')
         if len(linkedFiles) > 0:
             linkedFilePaths = []
+            relLinkedFilePaths = []
             for linkedFile in linkedFiles:
-                linkedFilePaths.append(linkedFile.attrib['LINK_URL'])
+                linkedFilePaths.append(linkedFile.attrib['LINK_URL'][7:]) # [7:] removes the file://    
+                relLinkedFilePaths.append(linkedFile.attrib['RELATIVE_LINK_URL'])
         else:
             linkedFilePaths = None
+            relLinkedFilePaths = None
         
         # remove "file://" from the path
         mediaPath = mediaPath[7:]
-        return clipTiers,mediaPath,linkedFilePaths
+        return clipTiers,mediaPath,linkedFilePaths,relLinkedFilePaths
 
     def fixLinks(self, searchDir="./"):
         """A function that fixes links in an elan file by searching recursively through the search directory, and then links the best matches for each file."""
@@ -267,7 +273,6 @@ class tierSet:
                 tierNode.attrib["LINGUISTIC_TYPE_REF"] = "default-lt"
                 tierNode.attrib["TIER_ID"] = workingTier
             
-                annotation = ElementTree.SubElement(tierNode, "ANNOTATION")
                 #----------------------------------------------------  
                 for anno in tier.annotations:
                     if verbose: print "Working on time slot: "+str(tslt)+" and annotation: "+str(anot)
@@ -288,6 +293,7 @@ class tierSet:
                 
                     anot += 1
                     annotation_id = 'a' + str(anot)
+                    annotation = ElementTree.SubElement(tierNode, "ANNOTATION")
                     alignable_annotation = ElementTree.SubElement(annotation, "ALIGNABLE_ANNOTATION")
                     alignable_annotation.attrib["ANNOTATION_ID"] = annotation_id
                     alignable_annotation.attrib["TIME_SLOT_REF1"] = time_slot_id0
@@ -328,9 +334,9 @@ def pfsxOut(tsConfigs):
         
         tree = ElementTree.ElementTree(root)
         # for pretty printing
-        indent(root)
+        root = indent(root)
                 
-        return tree        
+        return tree
         
         
 class track:
@@ -346,6 +352,7 @@ class track:
 
 class timeSeries:
     """A time series either from a file, or from individual specification"""
+    # this should be seperated to allow for multiple tracksources in a single timeseries (conf) file.
     def __init__(self, file=None, source=None, sampleType="Continuos Rate", timeCol=0, tracks=None):
         if file:
             source, sampleType, tracks, timeCol = self.extractTimeSeries(file)
@@ -447,7 +454,7 @@ class timeSeries:
         
         tree = ElementTree.ElementTree(root)
         # for pretty printing
-        indent(root)
+        root = indent(root)
                 
         return tree,pfsxPrefs         
 
