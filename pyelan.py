@@ -173,7 +173,8 @@ class tierSet:
             relLinkedFilePaths = []
             for linkedFile in linkedFiles:
                 linkedFilePaths.append(linkedFile.attrib['LINK_URL'][7:]) # [7:] removes the file://    
-                relLinkedFilePaths.append(linkedFile.attrib['RELATIVE_LINK_URL'])
+                if 'RELATIVE_LINK_URL' in linkedFile.attrib:
+                    relLinkedFilePaths.append(linkedFile.attrib['RELATIVE_LINK_URL'])
         else:
             linkedFilePaths = None
             relLinkedFilePaths = None
