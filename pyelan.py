@@ -73,10 +73,13 @@ def findPathMatch(oldPath, searchDir = "./"):
         if len(newPaths) == 1:
             # if only one is found, make that the new path
             newPath = newPaths[0]
-        else:
+        elif len(newPaths) > 1:
             # determine which path matches more of the directory structure. This uses common strings, but not common contiguous strings. This should work in nearly all conditions, but there migth be edge cases where this fails.
             scores = [lcs(oldPath,pt) for pt in newPaths]
             newPath = newPaths[scores.index(max(scores))]
+        elif len(newPaths) == 0:
+            warnings.warn("Could not find any linked files for " + basename)
+            newPath = oldPath
     else:
         newPath = oldPath
     return newPath        
