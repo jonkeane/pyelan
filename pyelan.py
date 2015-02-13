@@ -357,14 +357,15 @@ class track:
 class timeSeries:
     """A time series either from a file, or from individual specification"""
     # this should be seperated to allow for multiple tracksources in a single timeseries (conf) file.
-    def __init__(self, file=None, source=None, sampleType="Continuos Rate", timeCol=0, tracks=None):
+    def __init__(self, file=None, source=None, timeOrigin=None, sampleType="Continuos Rate", timeCol=0, tracks=None):
         if file:
-            source, sampleType, tracks, timeCol = self.extractTimeSeries(file)
+            source, sampleType, tracks, timeCol, timeOrigin = self.extractTimeSeries(file)
             pathELAN = os.path.dirname(file)
         self.source = source
         self.sampleType = sampleType
         self.tracks = tracks
         self.timeCol = timeCol
+        self.timeOrigin = timeOrigin
 
     def extractTimeSeries(self, file):
         """A function that extracts information from an already existing TS file. To do"""
@@ -377,6 +378,7 @@ class timeSeries:
         source = tracksource.attrib['source-url'][7:] # the [7:] removes the file://
         sampleType = tracksource.attrib['sample-type']
         timeCol = int(tracksource.attrib['time-column'])
+        timeOrigin = float(tracksource.attrib['time-origin'])
         
         # get individual tracks
         tracks = tracksource.findall("track")
@@ -399,7 +401,7 @@ class timeSeries:
             color = [int(i) for i in color.text.split(',')]
             range = [min,max]  
             trackList.append(track(name, column, row, range, color, properties, deriv))
-        return source, sampleType, trackList, timeCol
+        return source, sampleType, trackList, timeCol, timeOrigin
         
     def fixLinks(self, searchDir="./"):
         """A function that fixes links in a tsconf file by searching recursively through the search directory, and then links the best matches for each file."""
