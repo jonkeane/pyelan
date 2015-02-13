@@ -378,7 +378,10 @@ class timeSeries:
         source = tracksource.attrib['source-url'][7:] # the [7:] removes the file://
         sampleType = tracksource.attrib['sample-type']
         timeCol = int(tracksource.attrib['time-column'])
-        timeOrigin = float(tracksource.attrib['time-origin'])
+        try: 
+            timeOrigin = float(tracksource.attrib['time-origin'])
+        except KeyError:
+            timeOrigin = None
         
         # get individual tracks
         tracks = tracksource.findall("track")
@@ -421,6 +424,9 @@ class timeSeries:
         tracksource.set('sample-type', tsObj.sampleType)
         tracksource.set('source-url', ''.join(["file://",os.path.abspath(tsObj.source)]))
         tracksource.set('time-column', str(tsObj.timeCol))
+        if tsObj.timeOrigin:
+            tracksource.set('time-origin', str(tsObj.timeOrigin))
+            
         
         prop = ElementTree.SubElement(tracksource, 'property')
         prop.set('key', "provider")
