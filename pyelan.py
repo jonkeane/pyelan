@@ -89,7 +89,10 @@ class annotation:
     def __init__(self, begin, end, value, units="ms"):
         self.begin = begin
         self.end = end
-        self.value = value.strip()
+        if value != None:
+            self.value = value.strip()
+        else:
+            self.value = value
         self.units = units
  
     def millisToFrames(self, fps = (60.*(1000./1001.))):
