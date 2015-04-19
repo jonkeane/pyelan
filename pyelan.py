@@ -262,7 +262,10 @@ class tierSet:
         for mediaFile in mediaFiles:
             media = ElementTree.SubElement(header[0], 'MEDIA_DESCRIPTOR')
             media.set('MEDIA_URL', ''.join(["file://",os.path.abspath(mediaFile)]))
-            media.set('MIME_TYPE', 'video/*')
+            if os.path.splitext(mediaFile)[1] == ".wav":
+                media.set('MIME_TYPE', 'audio/*')
+            else:
+                media.set('MIME_TYPE', 'video/*')
             media.set('RELATIVE_MEDIA_URL', ''.join(["./",os.path.relpath(os.path.abspath(mediaFile), destDir)]))
 
         # Set the link
