@@ -270,11 +270,12 @@ class tierSet:
 
         # Set the link
         linkedFiles = tierObj.linkedFiles
-        for fl in linkedFiles:
-            media = ElementTree.SubElement(header[0], 'LINKED_FILE_DESCRIPTOR')
-            media.set('LINK_URL', ''.join(["file://",os.path.abspath(fl)]))
-            media.set('MIME_TYPE', 'unknown') # change to read file extension?
-            media.set('RELATIVE_LINK_URL', ''.join(["./",os.path.relpath(os.path.abspath(fl), destDir)]))
+        if linkedFiles != [None]:
+                for fl in linkedFiles:
+                    media = ElementTree.SubElement(header[0], 'LINKED_FILE_DESCRIPTOR')
+                    media.set('LINK_URL', ''.join(["file://",os.path.abspath(fl)]))
+                    media.set('MIME_TYPE', 'unknown') # change to read file extension?
+                    media.set('RELATIVE_LINK_URL', ''.join(["./",os.path.relpath(os.path.abspath(fl), destDir)]))
 
         time_order = root[1]
 
