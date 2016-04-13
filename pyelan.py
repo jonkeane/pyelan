@@ -64,6 +64,7 @@ def lcs(string1, string2):
 
 def findPathMatch(oldPath, searchDir = "./"):
     dirContents = getRecDirStruct(searchDir)
+    # print(dirContents)
     if os.path.isfile(oldPath) == False:
         # if the current path is not a valid path
         basename = os.path.basename(oldPath)
@@ -140,10 +141,10 @@ class tierSet:
                     # self.tiers = tier
                     # self.pathELAN = []
                     warnings.warn("Could not find the media file: "+mediaFile)
-                    newMedia = newMedia.append(mediaFile)
+                    newMedia.append(mediaFile)
 
                 else:
-                    newMedia = newMedia.append(sameDirPath)
+                    newMedia.append(sameDirPath)
 
     def extractTiers(self, file):
         """A function that extracts the tiers from a file and creates a tierSet that includes everything in the file."""
@@ -204,7 +205,7 @@ class tierSet:
 
     def fixLinks(self, searchDir="./"):
         """A function that fixes links in an elan file by searching recursively through the search directory, and then links the best matches for each file."""
-        self.media = [os.path.abspath(findPathMatch(self.media, searchDir=searchDir)) for path in self.media]
+        self.media = [os.path.abspath(findPathMatch(path, searchDir=searchDir)) for path in self.media]
         self.linkedFiles = [os.path.abspath(findPathMatch(path, searchDir=searchDir)) for path in self.linkedFiles]
 
 
