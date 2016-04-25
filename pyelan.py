@@ -1,5 +1,5 @@
 import sys, os, re, datetime, warnings
-from elementtree import ElementTree
+from xml.etree import ElementTree
 
 #import tk if it exists. This import might not actually be necesary in pyelan anymore (it might be legacy from fflipper)
 try:
