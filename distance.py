@@ -106,7 +106,6 @@ def cohens_kappa(tier1, tier2):
                 comp_frames[frame] = anno.value
     
     kappa = metrics.cohen_kappa_score(gs_frames.values(), comp_frames.values())
-    import pdb; pdb.set_trace()
     return(kappa)
 
 
