@@ -306,7 +306,7 @@ class tierSet:
 
                 #----------------------------------------------------
                 for anno in tier.annotations:
-                    if verbose: print "Working on time slot: "+str(tslt)+" and annotation: "+str(anot)
+                    if verbose: print("Working on time slot: {0} and annotation: {1}".format(str(tslt), str(anot)))
                     tslt += 1
                     time_slot_id0 = 'ts' + workingTier + str(tslt)
                     time_value0 = str(anno.begin)

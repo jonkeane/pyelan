@@ -1,5 +1,5 @@
 import sys, re, os, itertools, collections, imp
-import pyelan as pyelan
+import core as pyelan
 
 try:
     imp.find_module('sklearn')
