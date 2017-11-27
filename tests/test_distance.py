@@ -103,3 +103,128 @@ class TestOverlappingLevenshtein(TestCase):
                 pyelan.annotation(begin=15, end=16, value='c')])
         self.assertEqual(overlappingAnnotationLevenshtein(tier_a, tier_b), 0)
 
+class TestAnnoMatching(TestCase):
+    '''Test class for merging overlapping annotations
+    '''    
+    def test_matching(self):
+        tier_a = pyelan.tier(
+            tierName='test_a',
+            annotations=[
+                pyelan.annotation(begin=1, end=10, value='aaa'),
+                pyelan.annotation(begin=15, end=16, value='c')])
+        tier_b = pyelan.tier(
+            tierName='test_b',
+            annotations=[
+                pyelan.annotation(begin=1, end=2, value='aaa'),
+                pyelan.annotation(begin=15, end=16, value='c')])
+        matched = match_annos(tier_a, tier_b)
+        expected = [(a, b) for a, b in zip(tier_a.annotations, tier_b.annotations)]
+        self.assertEqual(matched, expected)
+        
+    def test_matching_with_two_to_one(self):
+        tier_a = pyelan.tier(
+            tierName='test_a',
+            annotations=[
+                pyelan.annotation(begin=1, end=10, value='aaa bbb'),
+                pyelan.annotation(begin=15, end=16, value='c')])
+        tier_b = pyelan.tier(
+            tierName='test_b',
+            annotations=[
+                pyelan.annotation(begin=1, end=2, value='aaa'),
+                pyelan.annotation(begin=8, end=10, value='bbb'),
+                pyelan.annotation(begin=15, end=16, value='c')])
+        matched = match_annos(tier_a, tier_b)
+        expected = [
+            (tier_a.annotations[0], tier_b.annotations[0]),
+            (tier_a.annotations[0], tier_b.annotations[1]),
+            (tier_a.annotations[1], tier_b.annotations[2])
+        ]
+        self.assertEqual(matched, expected)        
+
+    def test_matching_with_missing(self):
+        tier_a = pyelan.tier(
+            tierName='test_a',
+            annotations=[
+                pyelan.annotation(begin=1, end=10, value='aaa bbb'),
+                pyelan.annotation(begin=15, end=16, value='c')])
+        tier_b = pyelan.tier(
+            tierName='test_b',
+            annotations=[
+                pyelan.annotation(begin=1, end=2, value='aaa')])
+        matched = match_annos(tier_a, tier_b, add_blank_for_mismatch = True)
+        expected = [
+            (tier_a.annotations[0], tier_b.annotations[0]),
+            (tier_a.annotations[1], pyelan.annotation(begin=15, end=16, value=''))
+        ]
+        for m, e in zip(matched, expected):
+            self.assertEqual(m[0].begin, e[0].begin)
+            self.assertEqual(m[0].end, e[0].end)
+            self.assertEqual(m[0].value, e[0].value)
+            
+            self.assertEqual(m[1].begin, e[1].begin)
+            self.assertEqual(m[1].end, e[1].end)
+            self.assertEqual(m[1].value, e[1].value)
+
+class TestAnnoMerging(TestCase):
+    '''Test class for merging overlapping annotations
+    '''    
+    def test_overlap_one_two(self):
+        tier_a = pyelan.tier(
+            tierName='test_a',
+            annotations=[
+                pyelan.annotation(begin=1, end=10, value='aaa bbb'),
+                pyelan.annotation(begin=15, end=16, value='c')])
+        tier_b = pyelan.tier(
+            tierName='test_b',
+            annotations=[
+                pyelan.annotation(begin=1, end=2, value='aaa'),
+                pyelan.annotation(begin=8, end=10, value='bbb'),
+                pyelan.annotation(begin=15, end=16, value='c')])
+        tier_b_merged = pyelan.tier(
+                tierName='test_b',
+                annotations=[
+                    pyelan.annotation(begin=1, end=10, value='aaa bbb'),
+                    pyelan.annotation(begin=15, end=16, value='c')])
+        merged = merge_duplicate_annos(match_annos(tier_a, tier_b))
+        expected = match_annos(tier_a, tier_b_merged)
+        
+        for m, e in zip(merged, expected):
+            self.assertEqual(m[0].begin, e[0].begin)
+            self.assertEqual(m[0].end, e[0].end)
+            self.assertEqual(m[0].value, e[0].value)
+            
+            self.assertEqual(m[1].begin, e[1].begin)
+            self.assertEqual(m[1].end, e[1].end)
+            self.assertEqual(m[1].value, e[1].value)
+            
+            
+    def test_overlap_three_annos(self):
+        tier_a = pyelan.tier(
+            tierName='test_a',
+            annotations=[
+                pyelan.annotation(begin=1, end=10, value='aaa bbb ddd'),
+                pyelan.annotation(begin=15, end=16, value='c')])
+        tier_b = pyelan.tier(
+            tierName='test_b',
+            annotations=[
+                pyelan.annotation(begin=1, end=2, value='aaa'),
+                pyelan.annotation(begin=4, end=6, value='bbb'),
+                pyelan.annotation(begin=8, end=10, value='ddd'),
+                pyelan.annotation(begin=15, end=16, value='c')])
+        tier_b_merged = pyelan.tier(
+                tierName='test_b',
+                annotations=[
+                    pyelan.annotation(begin=1, end=10, value='aaa bbb ddd'),
+                    pyelan.annotation(begin=15, end=16, value='c')])
+        merged = merge_duplicate_annos(match_annos(tier_a, tier_b))
+        expected = match_annos(tier_a, tier_b_merged)
+        
+        for m, e in zip(merged, expected):
+            self.assertEqual(m[0].begin, e[0].begin)
+            self.assertEqual(m[0].end, e[0].end)
+            self.assertEqual(m[0].value, e[0].value)
+            
+            self.assertEqual(m[1].begin, e[1].begin)
+            self.assertEqual(m[1].end, e[1].end)
+            self.assertEqual(m[1].value, e[1].value)
+         
