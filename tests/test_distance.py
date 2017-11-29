@@ -43,7 +43,7 @@ class TestTotalLevenshtein(TestCase):
         tier_b = pyl.tier(
             tierName='test_b',
             annotations=[pyl.annotation(begin=1, end=2, value='bbb')])
-        self.assertEqual(totalLevenshtein(tier_a, tier_b), 3) 
+        self.assertEqual(totalLevenshtein(tier_a, tier_b), 3/3.) 
         
     def test_total_levenshtein_multipleannos(self):
         tier_a = pyl.tier(
@@ -54,7 +54,7 @@ class TestTotalLevenshtein(TestCase):
         tier_b = pyl.tier(
             tierName='test_b',
             annotations=[pyl.annotation(begin=1, end=2, value='aaa')])
-        self.assertEqual(totalLevenshtein(tier_a, tier_b), 1) 
+        self.assertEqual(totalLevenshtein(tier_a, tier_b), 1/4.) 
         
 class TestOverlappingLevenshtein(TestCase):
     '''Test class for overlapping levenshtein distnace calculations
@@ -75,7 +75,7 @@ class TestOverlappingLevenshtein(TestCase):
         tier_b = pyl.tier(
             tierName='test_b',
             annotations=[pyl.annotation(begin=4, end=6, value='bbb')])
-        self.assertEqual(overlappingAnnotationLevenshtein(tier_a, tier_b), 3) 
+        self.assertEqual(overlappingAnnotationLevenshtein(tier_a, tier_b), 3/3.) 
     
     def test_overlap_multiannos(self):
         tier_a = pyl.tier(
@@ -88,7 +88,7 @@ class TestOverlappingLevenshtein(TestCase):
             annotations=[
                 pyl.annotation(begin=4, end=6, value='bbb'),
                 pyl.annotation(begin=6, end=10, value='bbb')])
-        self.assertEqual(overlappingAnnotationLevenshtein(tier_a, tier_b), 6)
+        self.assertEqual(overlappingAnnotationLevenshtein(tier_a, tier_b), 6/6.)
     
     def test_overlap_one_two(self):
         tier_a = pyl.tier(
@@ -102,7 +102,7 @@ class TestOverlappingLevenshtein(TestCase):
                 pyl.annotation(begin=1, end=5, value='aaa'),
                 pyl.annotation(begin=6, end=10, value='bbb'),
                 pyl.annotation(begin=15, end=16, value='c')])
-        self.assertEqual(overlappingAnnotationLevenshtein(tier_a, tier_b), 0)
+        self.assertEqual(overlappingAnnotationLevenshtein(tier_a, tier_b), 0/8.)
 
 class TestAnnoMatching(TestCase):
     '''Test class for merging overlapping annotations

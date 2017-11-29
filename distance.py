@@ -1,4 +1,6 @@
-import sys, re, os, itertools, collections, imp
+# python distance.py path/to/file.eaf path/to/file.eaf
+
+import sys, re, os, itertools, collections, imp, warnings
 import core as pyelan
 
 try:
@@ -7,8 +9,6 @@ try:
     sklearn_avail = True
 except ImportError:
     sklearn_avail = False
-
-# python distance.py path/to/file.eaf path/to/file.eaf
 
 def levenshtein(s1, s2):
     """Total Levenshtein distance between two strings
@@ -40,7 +40,9 @@ def totalLevenshtein(tier1, tier2):
     
     tier1_string = "".join([anno.value for anno in tier1.annotations])
     tier2_string = "".join([anno.value for anno in tier2.annotations])
-    return(levenshtein(tier1_string, tier2_string))
+    
+    n_char = float(max(len(tier1_string), len(tier2_string)))
+    return(levenshtein(tier1_string, tier2_string)/n_char)
 
 def overlappingAnnotationLevenshtein(tier1, tier2):
     """Levenshtein distance between two tiers for only those annotations which 
@@ -60,7 +62,14 @@ def overlappingAnnotationLevenshtein(tier1, tier2):
 
     # get strings from annotations
     matching_annos = merge_duplicate_annos(matching_annos)
-    return(sum([levenshtein(a1.value, a2.value) for a1, a2 in matching_annos]))
+    
+    # join both strings together to determine the number of characters
+    tier1_string = "".join([anno[0].value for anno in matching_annos])
+    tier2_string = "".join([anno[1].value for anno in matching_annos])
+    n_char = float(max(len(tier1_string), len(tier2_string)))
+    
+    lev_dist = sum([levenshtein(a1.value, a2.value) for a1, a2 in matching_annos])
+    return(lev_dist/n_char)
 
 def cohens_kappa(tier1, tier2):
     """Cohen's kappa between two tiers
@@ -73,7 +82,6 @@ def cohens_kappa(tier1, tier2):
         print("Scikit-learn is not available, cohen's kappa can't be calculated.")
         return(None)
     
-    # TODO: add in non-annotations or non-overlapping
     # iterate over annotations and mark overlaps.
     matching_annos = match_annos(tier1, tier2, add_blank_for_mismatch = True)
     
@@ -186,34 +194,65 @@ def merge_duplicate_annos(values):
     return(annos_out)
 
 
-if __name__ == '__main__':
-    elanFiles = sys.argv[1:]
+def compare_files(elanFiles):
+    """Compare files to check reliability
+    
+    Keyword arguments:
+    elanFiles -- a list of elan files to compare
+    """
     file_tiers = []
     for fl in elanFiles:
-        # TOOD: suppress warnings about media?
-        file_tiers.append(pyelan.tierSet(file = fl))
+        # suppress media warnings when loading elan files
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', UserWarning)
+            
+            file_tiers.append({
+                "filename": fl,
+                "tiers": pyelan.tierSet(file = fl)})
     print("Processing {0} files".format(len(file_tiers)))
-
+    
     tiers = []
     for ft in file_tiers:
-        tiers.extend(ft.tiers)
+        fl = ft["filename"]
+        tiers.extend([{"filename": fl, "tier": t} for t in ft["tiers"].tiers])
     print("Found a total of {0} tiers across all files".format(len(tiers)))
 
     # Use the first tier as the ostensible gold standard
-    gs_tier = tiers[0]
-    comp_tiers = tiers[1] # TODO: make this be a list
-    print("The gold-standard tier has {0} annotations".format(len(gs_tier.annotations)))
-    print("The comparison tier has {0} annotations".format(len(comp_tiers.annotations)))
+    gs_tier = tiers.pop(0)
+    print("Using the tier {0} from file {1} for the gold standard".format(gs_tier["tier"].tierName, gs_tier["filename"]))
+    print("The gold-standard tier has {0} annotations".format(len(gs_tier["tier"].annotations)))
+    print("")    
     
-    # straight levenshtein distance
-    # TODO: calculate GS total characters
-    total_lev = totalLevenshtein(gs_tier, comp_tiers)
-    print("There was a total Levenshtein distance for all annotations of: {0}".format(total_lev))
-    
-    # TODO: calculate GS total characters
-    overlap_lev = overlappingAnnotationLevenshtein(gs_tier, comp_tiers)
-    print("There was a Levenshtein distance for overlapping annotations of: {0}".format(overlap_lev))
+    out = []
+    for comp_tier in tiers:
+        print("Comparing to the tier {0} from file {1}".format(comp_tier["tier"].tierName, comp_tier["filename"]))
+        print("The comparison tier has {0} annotations".format(len(comp_tier["tier"].annotations)))
+        
+        # straight levenshtein distance
+        # TODO: calculate GS total characters
+        total_lev = totalLevenshtein(gs_tier["tier"], comp_tier["tier"])
+        print("There was a total Levenshtein distance for all annotations of: {0}".format(total_lev))
+        
+        # TODO: calculate GS total characters
+        overlap_lev = overlappingAnnotationLevenshtein(gs_tier["tier"], comp_tier["tier"])
+        print("There was a Levenshtein distance for overlapping annotations of: {0}".format(overlap_lev))
 
-    kappa = cohens_kappa(gs_tier, comp_tiers)
-    print("There was a Cohen's Kappa of: {0}".format(kappa))
+        kappa = cohens_kappa(gs_tier["tier"], comp_tier["tier"])
+        print("There was a Cohen's Kappa of: {0}".format(kappa))
+        print("")
+        
+        out.append({
+            "gs_file": gs_tier["filename"],
+            "gs_tier": gs_tier["tier"].tierName,
+            "comparison_file": comp_tier["filename"],
+            "comparison_tier": comp_tier["tier"].tierName,
+            "total_levenshtein": total_lev,
+            "overlapping_levenshtein": overlap_lev,
+            "cohens_kappa": kappa})
+    return(out)
+            
+            
+
+if __name__ == '__main__':
+    compare_files(sys.argv[1:])
 
