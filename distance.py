@@ -197,6 +197,8 @@ def merge_duplicate_annos(values):
 def compare_files(elanFiles):
     """Compare files to check reliability
     
+    The first tier of the first file is used as the gold standard to compare against.
+    
     Keyword arguments:
     elanFiles -- a list of elan files to compare
     """
