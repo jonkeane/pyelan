@@ -104,6 +104,81 @@ class TestOverlappingLevenshtein(TestCase):
                 pyl.annotation(begin=15, end=16, value='c')])
         self.assertEqual(overlappingAnnotationLevenshtein(tier_a, tier_b), 0/8.)
 
+class TestoverlappingTimeDiff(TestCase):
+    '''Test class for overlapping levenshtein distnace calculations
+    '''    
+    def test_nooverlap(self):
+        tier_a = pyl.tier(
+            tierName='test_a',
+            annotations=[pyl.annotation(begin=1, end=2, value='aaa')])
+        tier_b = pyl.tier(
+            tierName='test_b',
+            annotations=[pyl.annotation(begin=5, end=6, value='bbb')])
+        self.assertEqual(overlappingTimeDiff(tier_a, tier_b), None) 
+    
+    def test_overlap(self):
+        tier_a = pyl.tier(
+            tierName='test_a',
+            annotations=[pyl.annotation(begin=1, end=5, value='aaa')])
+        tier_b = pyl.tier(
+            tierName='test_b',
+            annotations=[pyl.annotation(begin=4, end=6, value='bbb')])
+        self.assertEqual(overlappingTimeDiff(tier_a, tier_b), 3+1) 
+    
+    def test_overlap_multiannos(self):
+        tier_a = pyl.tier(
+            tierName='test_a',
+            annotations=[
+                pyl.annotation(begin=1, end=5, value='aaa'),
+                pyl.annotation(begin=6, end=10, value='aaa')])
+        tier_b = pyl.tier(
+            tierName='test_b',
+            annotations=[
+                pyl.annotation(begin=4, end=6, value='bbb'),
+                pyl.annotation(begin=6, end=10, value='bbb')])
+        self.assertEqual(overlappingTimeDiff(tier_a, tier_b), 3+1)
+
+    def test_overlap_multiannos_reverse(self):
+        tier_a = pyl.tier(
+            tierName='test_a',
+            annotations=[
+                pyl.annotation(begin=4, end=5, value='aaa'),
+                pyl.annotation(begin=6, end=10, value='aaa')])
+        tier_b = pyl.tier(
+            tierName='test_b',
+            annotations=[
+                pyl.annotation(begin=1, end=6, value='bbb'),
+                pyl.annotation(begin=6, end=10, value='bbb')])
+        self.assertEqual(overlappingTimeDiff(tier_a, tier_b), 3+1)
+    
+    def test_overlap_one_two(self):
+        tier_a = pyl.tier(
+            tierName='test_a',
+            annotations=[
+                pyl.annotation(begin=1, end=10, value='aaa bbb'),
+                pyl.annotation(begin=15, end=16, value='c')])
+        tier_b = pyl.tier(
+            tierName='test_b',
+            annotations=[
+                pyl.annotation(begin=1, end=5, value='aaa'),
+                pyl.annotation(begin=6, end=10, value='bbb'),
+                pyl.annotation(begin=15, end=16, value='c')])
+        self.assertEqual(overlappingTimeDiff(tier_a, tier_b), 0)
+
+    def test_overlap_multiannos_frames(self):
+        tier_a = pyl.tier(
+            tierName='test_a',
+            annotations=[
+                pyl.annotation(begin=0, end=101, value='aaa'),
+                pyl.annotation(begin=167, end=334, value='aaa')])
+        tier_b = pyl.tier(
+            tierName='test_b',
+            annotations=[
+                pyl.annotation(begin=34, end=67, value='bbb'),
+                pyl.annotation(begin=201, end=334, value='bbb')])
+        self.assertEqual(overlappingTimeDiff(tier_a, tier_b, fps = 29.97), 2+1)
+
+
 class TestAnnoMatching(TestCase):
     '''Test class for merging overlapping annotations
     '''    
