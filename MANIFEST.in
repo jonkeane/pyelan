@@ -1,0 +1,3 @@
+include pyelan/elanSkeleton
+include relPathFix.py
+include elanGen.py
