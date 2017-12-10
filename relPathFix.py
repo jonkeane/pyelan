@@ -1,5 +1,5 @@
 import sys, os, re, shutil
-import core as pyelan
+import pyelan
 
 # python realPathFix.py [search path] [files]
 searchDir = sys.argv[1]

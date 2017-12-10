@@ -1,7 +1,7 @@
 # python distance.py path/to/file.eaf path/to/file.eaf
 
 import sys, re, os, itertools, collections, imp, warnings
-import core as pyelan
+from .core import tierSet, annotation
 
 try:
     imp.find_module('sklearn')
@@ -21,7 +21,7 @@ def match_annos(tier1, tier2, add_blank_for_mismatch = False):
         gs_to_add = []
         for anno in tier1.annotations:
             if anno not in [a[0] for a in matching_annos]:
-                gs_to_add.append((anno, pyelan.annotation(
+                gs_to_add.append((anno, annotation(
                     value = "",
                     begin = anno.begin,
                     end = anno.end
@@ -29,7 +29,7 @@ def match_annos(tier1, tier2, add_blank_for_mismatch = False):
         comp_to_add = []
         for anno in tier2.annotations:
             if anno not in [a[1] for a in matching_annos]:
-                comp_to_add.append((anno, pyelan.annotation(
+                comp_to_add.append((anno, annotation(
                     value = "",
                     begin = anno.begin,
                     end = anno.end
@@ -69,12 +69,12 @@ def merge_duplicate_annos(values):
 
     annos_out = []
     for annopair in combined_annos:
-        gc = pyelan.annotation(
+        gc = annotation(
             begin = min([anno.begin for anno in annopair[0]]),
             end = max([anno.end for anno in annopair[0]]),
             value = " ".join([anno.value for anno in annopair[0]])
         )
-        comp = pyelan.annotation(
+        comp = annotation(
             begin = min([anno.begin for anno in annopair[1]]),
             end = max([anno.end for anno in annopair[1]]),
             value = " ".join([anno.value for anno in annopair[1]])
@@ -110,8 +110,8 @@ def totalLevenshtein(tier1, tier2):
     """Total Levenshtein distance between two tiers
 
     Keyword arguments:
-    tier1 -- the first tier (of type pyelan.tier)
-    tier2 -- the second tier (of type pyelan.tier)
+    tier1 -- the first tier (of type tier)
+    tier2 -- the second tier (of type tier)
     """
 
     tier1_string = "".join([anno.value for anno in tier1.annotations])
@@ -125,8 +125,8 @@ def overlappingAnnotationLevenshtein(tier1, tier2):
     overlap
 
     Keyword arguments:
-    tier1 -- the first tier (of type pyelan.tier)
-    tier2 -- the second tier (of type pyelan.tier)
+    tier1 -- the first tier (of type tier)
+    tier2 -- the second tier (of type tier)
     """
 
     # iterate over annotations and mark overlaps.
@@ -151,8 +151,8 @@ def cohens_kappa(tier1, tier2, frame_min = None, frame_max = None):
     """Cohen's kappa between two tiers
 
     Keyword arguments:
-    tier1 -- the first tier (of type pyelan.tier)
-    tier2 -- the second tier (of type pyelan.tier)
+    tier1 -- the first tier (of type tier)
+    tier2 -- the second tier (of type tier)
     frame_min -- the lowest bound of frames to check
     frame_max -- the upper bound of frames to check
     """
@@ -209,8 +209,8 @@ def overlappingTimeDiff(tier1, tier2, fps = None):
     overlap
 
     Keyword arguments:
-    tier1 -- the first tier (of type pyelan.tier)
-    tier2 -- the second tier (of type pyelan.tier)
+    tier1 -- the first tier (of type tier)
+    tier2 -- the second tier (of type tier)
     """
 
     # iterate over annotations and mark overlaps.
@@ -256,7 +256,7 @@ def compare_files(elanFiles, frame_min = None, frame_max = None):
 
             file_tiers.append({
                 "filename": fl,
-                "tiers": pyelan.tierSet(file = fl)})
+                "tiers": tierSet(file = fl)})
     print("Processing {0} files".format(len(file_tiers)))
 
     tiers = []
