@@ -1,4 +1,6 @@
 import sys, os, re, datetime, warnings
+from importlib import resources as impresources
+from . import templates
 from xml.etree import ElementTree
 
 #import tk if it exists. This import might not actually be necesary in pyelan anymore (it might be legacy from fflipper)
@@ -140,6 +142,7 @@ class tierSet:
                     # self.mediaFile = []
                     # self.tiers = tier
                     # self.pathELAN = []
+                    import pdb; pdb.set_trace()
                     warnings.warn("Could not find the media file: "+mediaFile)
                     newMedia.append(mediaFile)
 
@@ -248,7 +251,7 @@ class tierSet:
         tiers = newTiers
         return tierSet(file=None, media=media, tiers=tiers, pathELAN=pathELAN)
 
-    def elanOut(tierObj, headFootFile = os.path.join(os.path.dirname(__file__),"elanSkeleton.eaf"), dest = "./out.eaf"):
+    def elanOut(tierObj, headFootFile = (impresources.files(templates) / "elanSkeleton.eaf"), dest = "./out.eaf"):
         """An unbound function that returns an elan file from a tier."""
         verbose = False
         tree = ElementTree.parse(headFootFile)
@@ -271,7 +274,7 @@ class tierSet:
 
         # Set the link
         linkedFiles = tierObj.linkedFiles
-        if linkedFiles != [None]:
+        if linkedFiles is not None and linkedFiles != [None]:
                 for fl in linkedFiles:
                     media = ElementTree.SubElement(header[0], 'LINKED_FILE_DESCRIPTOR')
                     media.set('LINK_URL', ''.join(["file://",os.path.abspath(fl)]))
@@ -302,7 +305,7 @@ class tierSet:
 
                 #----------------------------------------------------
                 for anno in tier.annotations:
-                    if verbose: print "Working on time slot: "+str(tslt)+" and annotation: "+str(anot)
+                    if verbose: print("Working on time slot: "+str(tslt)+" and annotation: "+str(anot))
                     tslt += 1
                     time_slot_id0 = 'ts' + workingTier + str(tslt)
                     time_value0 = str(anno.begin)
