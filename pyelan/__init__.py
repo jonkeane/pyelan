@@ -1,2 +1,2 @@
 from . import pyelan
-from pyelan import annotatino, tier, tierSet
+from .pyelan import annotation, tier, tierSet
