@@ -142,7 +142,6 @@ class tierSet:
                     # self.mediaFile = []
                     # self.tiers = tier
                     # self.pathELAN = []
-                    import pdb; pdb.set_trace()
                     warnings.warn("Could not find the media file: "+mediaFile)
                     newMedia.append(mediaFile)
 
